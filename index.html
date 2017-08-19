@@ -10,6 +10,8 @@
   </head>
 
   <body>
+  <table id=hands></table>
+  <h1>You selected <span id="percentage">0</span>% of hands.</h1>
   <script>
     function rank(n) {
       switch (n) {
@@ -21,34 +23,70 @@
         default: return n.toString();
       }
     }
-    function hand(i, j) {
+    function getHandName(i, j) {
       if (i < j) {
         [i, j] = [j, i];
       }
       return rank(i) + rank(j);
     }
-    let table = document.createElement('table');
+
+    function getSelectedHands() {
+      let checkboxes = document.getElementsByTagName('input');
+      let hands = [];
+      for (let checkbox of checkboxes) {
+        if (checkbox.checked) {
+          hands.push(checkbox.id);
+        }
+      }
+      return hands;
+    }
+
+    function calcHandPercentage() {
+      let selectedHands = getSelectedHands();
+      let cnt = 0;
+      for (let hand of selectedHands) {
+        if (hand[hand.length-1] == 'o') {
+          cnt += 12;
+        } else if (hand[hand.length-1] == 's') {
+          cnt += 4;
+        } else {
+          cnt += 6;
+        }
+      }
+      let percentage = cnt / 1372;
+      percentage = Math.round(percentage * 10000) / 100;
+      document.getElementById('percentage')
+              .textContent = percentage.toString();
+    }
+
+    let table = document.getElementById('hands');
     for (let i = 14; i >= 2; i--) {
       let tr = document.createElement('tr');
       for (let j = 14; j >= 2; j--) {
         let td = document.createElement('td');
-        let input = document.createElement('input');
-        input.type = 'checkbox';
-        let text = document.createTextNode(hand(i, j));
+        let checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.onclick = calcHandPercentage;
+        let hand = getHandName(i, j);
         if (i < j) {
-          text.nodeValue += 's';
+          hand += 'o';
+          td.style.backgroundColor = "#B0E0E6";
         } else if (i > j) {
-          text.nodeValue += 'o';
+          hand += 's';
+          td.style.backgroundColor = "#FFE4B5";
         } else {
-          td.style.backgroundColor = "#00FFFF";
+          td.style.backgroundColor = "#32CD32";
         }
-        td.appendChild(input);
-        td.appendChild(text);
+        checkbox.id = hand;
+        let text = document.createTextNode(hand);
+        let label = document.createElement('label');
+        label.appendChild(checkbox);
+        label.appendChild(text);
+        td.appendChild(label);
         tr.appendChild(td);
       }
       table.appendChild(tr);
     }
-    document.body.appendChild(table);
   </script>
   </body>
 </html>
