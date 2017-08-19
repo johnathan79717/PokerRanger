@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>PokerRanger</title>
+    <style>
+      table, th, td {
+        border: 1px solid black;
+      }
+    </style>
+  </head>
+
+  <body>
+  <script>
+    function rank(n) {
+      switch (n) {
+        case 14: return 'A';
+        case 13: return 'K';
+        case 12: return 'Q';
+        case 11: return 'J';
+        case 10: return 'T';
+        default: return n.toString();
+      }
+    }
+    function hand(i, j) {
+      if (i < j) {
+        [i, j] = [j, i];
+      }
+      return rank(i) + rank(j);
+    }
+    let table = document.createElement('table');
+    for (let i = 14; i >= 2; i--) {
+      let tr = document.createElement('tr');
+      for (let j = 14; j >= 2; j--) {
+        let td = document.createElement('td');
+        let input = document.createElement('input');
+        input.type = 'checkbox';
+        let text = document.createTextNode(hand(i, j));
+        if (i < j) {
+          text.nodeValue += 's';
+        } else if (i > j) {
+          text.nodeValue += 'o';
+        } else {
+          td.style.backgroundColor = "#00FFFF";
+        }
+        td.appendChild(input);
+        td.appendChild(text);
+        tr.appendChild(td);
+      }
+      table.appendChild(tr);
+    }
+    document.body.appendChild(table);
+  </script>
+  </body>
+</html>
