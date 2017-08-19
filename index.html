@@ -6,12 +6,17 @@
       table, th, td {
         border: 1px solid black;
       }
+      td {
+        text-align: center;
+      }
     </style>
   </head>
 
   <body>
-  <table id=hands></table>
-  <h1>You selected <span id="percentage">0</span>% of hands.</h1>
+    <h1> PokerRanger </h1>
+    <p>Source code: <a href="https://github.com/johnathan79717/PokerRanger">https://github.com/johnathan79717/PokerRanger</a></p>
+  <table id="hands"></table>
+  <h2>You selected <span id="percentage">0</span>% of hands.</h2>
   <script>
     function rank(n) {
       switch (n) {
@@ -41,7 +46,23 @@
       return hands;
     }
 
-    function calcHandPercentage() {
+    let colors = {
+      offsuit: "#B0E0E6",
+      suited: "#FFE4B5",
+      pair: "#32CD32",
+      selected: "#00BFFF",
+    };
+
+    function onHandClicked(checkbox, td, hand) {
+      if (checkbox.checked) {
+        td.style.backgroundColor = colors.selected;
+      } else if (hand[hand.length-1] == 'o') {
+        td.style.backgroundColor = colors.offsuit;
+      } else if (hand[hand.length-1] == 's') {
+        td.style.backgroundColor = colors.suited;
+      } else {
+        td.style.backgroundColor = colors.pair;
+      }
       let selectedHands = getSelectedHands();
       let cnt = 0;
       for (let hand of selectedHands) {
@@ -63,21 +84,25 @@
     for (let i = 14; i >= 2; i--) {
       let tr = document.createElement('tr');
       for (let j = 14; j >= 2; j--) {
-        let td = document.createElement('td');
-        let checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.onclick = calcHandPercentage;
         let hand = getHandName(i, j);
+        let td = document.createElement('td');
         if (i < j) {
           hand += 'o';
-          td.style.backgroundColor = "#B0E0E6";
+          td.style.backgroundColor = colors.offsuit;
         } else if (i > j) {
           hand += 's';
-          td.style.backgroundColor = "#FFE4B5";
+          td.style.backgroundColor = colors.suited;
         } else {
-          td.style.backgroundColor = "#32CD32";
+          td.style.backgroundColor = colors.pair;
         }
-        checkbox.id = hand;
+        let checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.style = 'display:none';
+        checkbox.onclick = function(c, t, h) {
+          return function() {
+            onHandClicked(c, t, h);
+          };
+        }(checkbox, td, hand);
         let text = document.createTextNode(hand);
         let label = document.createElement('label');
         label.appendChild(checkbox);
