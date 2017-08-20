@@ -16,8 +16,71 @@
     <h1> PokerRanger </h1>
     <p>Source code: <a href="https://github.com/johnathan79717/PokerRanger">https://github.com/johnathan79717/PokerRanger</a></p>
   <table id="hands"></table>
+  <p><button onclick="reset();"> Clear </button></p>
   <h2>You selected <span id="percentage">0</span>% of hands.</h2>
+  <h2>Save this range</h2>
+  <p>
+    Name:
+    <input type="text" id="range-name" placeholder="Button opening range">
+    <button onclick="saveRange();">Save</button>
+  </p>
+  <h2> Your saved ranges </h2>
+  <ul id="saved-ranges"></ul>
+  
   <script>
+    let checkboxes = {};
+
+    function reset() {
+      for (let hand in checkboxes) {
+        if (checkboxes[hand].checked) {
+          checkboxes[hand].click();
+        }
+      }
+    }
+
+    function displayRange(rangeName) {
+      reset();
+      let range = window.localStorage.getItem(rangeName).split(',');
+      for (let hand of range) {
+        checkboxes[hand].click();
+      }
+    }
+
+    function refreshSavedRanges() {
+      let listSavedRanges = document.getElementById("saved-ranges");
+      while (listSavedRanges.firstChild) {
+        listSavedRanges.removeChild(listSavedRanges.firstChild);
+      }
+      for (let rangeName in window.localStorage) {
+        let li = document.createElement("li");
+        let a = document.createElement("a");
+        a.textContent = rangeName;
+        a.href="javascript:";
+        a.onclick = () => displayRange(rangeName);
+        li.appendChild(a);
+        li.appendChild(document.createTextNode(' '));
+        let button = document.createElement("button");
+        button.textContent = "Delete";
+        button.onclick = function(rangeName) {
+          return function() {
+            window.localStorage.removeItem(rangeName);
+            refreshSavedRanges();
+          };
+        }(rangeName);
+        li.appendChild(button);
+        listSavedRanges.appendChild(li);
+      }
+    }
+
+    refreshSavedRanges();
+
+    function saveRange() {
+      let selectedHands = getSelectedHands();
+      let rangeName = document.getElementById("range-name").value;
+      window.localStorage.setItem(rangeName, selectedHands);
+      refreshSavedRanges();
+    }
+
     function rank(n) {
       switch (n) {
         case 14: return 'A';
@@ -104,6 +167,7 @@
             onHandClicked(c, t, h);
           };
         }(checkbox, td, hand);
+        checkboxes[hand] = checkbox;
         let text = document.createTextNode(hand);
         let label = document.createElement('label');
         label.appendChild(checkbox);
