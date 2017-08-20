@@ -74,7 +74,7 @@
           cnt += 6;
         }
       }
-      let percentage = cnt / 1372;
+      let percentage = cnt / 1326;
       percentage = Math.round(percentage * 10000) / 100;
       document.getElementById('percentage')
               .textContent = percentage.toString();
@@ -96,6 +96,7 @@
           td.style.backgroundColor = colors.pair;
         }
         let checkbox = document.createElement('input');
+        checkbox.id = hand;
         checkbox.type = 'checkbox';
         checkbox.style = 'display:none';
         checkbox.onclick = function(c, t, h) {
