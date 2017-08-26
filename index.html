@@ -17,11 +17,22 @@
     <p>Source code: <a href="https://github.com/johnathan79717/PokerRanger">https://github.com/johnathan79717/PokerRanger</a></p>
   <table id="hands"></table>
   <p><button onclick="reset();"> Clear </button></p>
-  <h2>You selected <span id="percentage">0</span>% of hands.</h2>
+  <h3>You selected <span id="count">0</span> hands, which is <span id="percentage">0</span>% of all hands.</h3>
+  <h2>The Board</h2>
+  <p>
+    <input type="text" id="board0" placeholder="Td" value="Td"/>
+    <input type="text" id="board1" placeholder="7s" value="Tc"/>
+    <input type="text" id="board2" placeholder="2c" value="2c"/>
+    <input type="text" id="board3" placeholder="2c"/>
+    <input type="text" id="board4" placeholder="2c"/>
+  </p>
+  <button onclick="getCombinations();">Get combinations</button>
+  <h2>Combinations</h2>
+  <div id="combinations"></div>
   <h2>Save this range</h2>
   <p>
     Name:
-    <input type="text" id="range-name" placeholder="Button opening range">
+    <input type="text" id="range-name" placeholder="Button opening range"/>
     <button onclick="saveRange();">Save</button>
   </p>
   <h2> Your saved ranges </h2>
@@ -29,6 +40,149 @@
   
   <script>
     let checkboxes = {};
+
+    function Card(s) {
+      if (!s) {
+        return s;
+      }
+      this.suit = s[1];
+      switch (s[0]) {
+        case 'A': this.rank = 14; break; 
+        case 'K': this.rank = 13; break;
+        case 'Q': this.rank = 12; break;
+        case 'J': this.rank = 11; break;
+        case 'T': this.rank = 10; break;
+        default: this.rank = parseInt(s[0]); break;
+      }
+    }
+
+    Card.prototype = {
+      equal(other) {
+        return this.rank == other.rank && this.suit == other.suit;
+      },
+      appearsIn(board) {
+        for (let card of board) {
+          if (this.equal(card)) {
+            return true;
+          }
+        }
+        return false;
+      },
+      toString() {
+        return numToRank(this.rank) + this.suit;
+      },
+    };
+
+    function getBoard() {
+      let board = [];
+      for (let i = 0; i < 5; i++) {
+        let card = new Card(document.getElementById("board"+i).value);
+        if (card) {
+          board.push(card);
+        }
+      }
+      return board;
+    }
+
+    function getCombinations() {
+      let board = getBoard();
+      let hands = getSelectedHands();
+      let possibleHands = [];
+      for (let hand of hands) {
+        for (let suit1 of 'cdhs') {
+          let card1 = new Card(hand[0] + suit1);
+          if (card1.appearsIn(board)) {
+            continue;
+          }
+          for (let suit2 of 'cdhs') {
+            if (hand[2] == 's') {
+              if (suit1 != suit2) {
+                continue;
+              }
+            } else if (hand[2] == 'o') {
+              if (suit1 == suit2) {
+                continue;
+              }
+            } else {
+              if (suit1 >= suit2) {
+                continue;
+              }
+            }
+            let card2 = new Card(hand[1] + suit2);
+            if (card2.appearsIn(board)) {
+              continue;
+            }
+            possibleHands.push(new StartingHand(card1, card2));
+          }
+        }
+      }
+      let divCombinations = document.getElementById("combinations");
+      divCombinations.textContent =
+        "There are " + possibleHands.length + " hands left.";
+      combinations = {};
+      for (let hand of possibleHands) {
+        let cards = hand.cards.concat(board);
+        let rank = getHandRank(cards);
+        if (!(rank.category in combinations)) {
+          combinations[rank.category] = [];
+        }
+        combinations[rank.category].push(hand);
+      }
+      console.log(combinations);
+      let ul = document.createElement('ul');
+      for (let category of ['quads', 'others']) {
+        if (category in combinations) {
+          let li = document.createElement('li');
+          li.textContent =
+            category + ': ' + combinations[category].toString();
+          ul.appendChild(li);
+        }
+      }
+      divCombinations.appendChild(ul);
+    }
+
+    function StartingHand(card1, card2) {
+      this.cards = [card1, card2];
+    }
+
+    StartingHand.prototype = {
+      toString() {
+        return this.cards[0].toString() + this.cards[1].toString();
+      }
+    };
+
+    function Rank(category, kickers) {
+      this.category = category;
+      this.kickers = kickers;
+    }
+
+    function getKickers(cards, count, exceptions) {
+      let kickers = [];
+      for (let card of cards) {
+        if (exceptions.indexOf(card.rank) == -1) {
+          kickers.push(cards);
+        }
+      }
+      kickers.sort().reverse();
+      return kickers.slice(0, count);
+    }
+
+    function getHandRank(cards) {
+      let rankCount = [];
+      for (let i = 2; i <= 14; i++) {
+        rankCount[i] = 0;
+      }
+      for (let card of cards) {
+        rankCount[card.rank]++;
+      }
+      for (let i = 14; i >= 2; i--) {
+        if (rankCount[i] == 4) {
+          let kickers = getKickers(cards, 1, [i]);
+          return new Rank('quads', [i].concat(kickers));
+        }
+      }
+      return new Rank('others', []);
+    }
 
     function reset() {
       for (let hand in checkboxes) {
@@ -81,7 +235,7 @@
       refreshSavedRanges();
     }
 
-    function rank(n) {
+    function numToRank(n) {
       switch (n) {
         case 14: return 'A';
         case 13: return 'K';
@@ -95,7 +249,7 @@
       if (i < j) {
         [i, j] = [j, i];
       }
-      return rank(i) + rank(j);
+      return numToRank(i) + numToRank(j);
     }
 
     function getSelectedHands() {
@@ -139,6 +293,7 @@
       }
       let percentage = cnt / 1326;
       percentage = Math.round(percentage * 10000) / 100;
+      document.getElementById('count').textContent = cnt.toString();
       document.getElementById('percentage')
               .textContent = percentage.toString();
     }
