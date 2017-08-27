@@ -131,7 +131,16 @@
         if (!(rank.category in combinations)) {
           combinations[rank.category] = [];
         }
-        combinations[rank.category].push(hand);
+        if (rank.category == "One pair") {
+          let arr = combinations[rank.category];
+          let pairRank = rank.cardRanks[0];
+          if (!arr[pairRank]) {
+            arr[pairRank] = [];
+          }
+          arr[pairRank].push(hand);
+        } else {
+          combinations[rank.category].push(hand);
+        }
       }
       let ul = document.createElement('ul');
       const CATEGORIES = [
@@ -145,14 +154,24 @@
         'One pair',
         'High card',
       ];
+      function displayCombination(category, hands) {
+        let percentage =
+          Math.round(hands.length / possibleHands.length * 1000) / 10;
+        let li = document.createElement('li');
+        li.textContent = `${category} (${percentage}%): ${hands.join(', ')}`;
+        ul.appendChild(li);
+      }
       for (let category of CATEGORIES) {
         if (category in combinations) {
-          let hands = combinations[category];
-          let percentage =
-            Math.round(hands.length / possibleHands.length * 1000) / 10;
-          let li = document.createElement('li');
-          li.textContent = `${category} (${percentage}%): ${hands.join(', ')}`;
-          ul.appendChild(li);
+          if (category == "One pair") {
+            let arr = combinations[category];
+            for (let i = 14; i >= 2; i--) {
+              if (!arr[i]) continue;
+              displayCombination("Pair of " + numToRank(i) + "s", arr[i]);
+            }
+          } else {
+            displayCombination(category, combinations[category]);
+          }
         }
       }
       divCombinations.appendChild(ul);
