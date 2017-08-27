@@ -20,9 +20,9 @@
   <h3>You selected <span id="count">0</span> hands, which is <span id="percentage">0</span>% of all hands.</h3>
   <h2>The Board</h2>
   <p>
-    <input type="text" id="board0" placeholder="Td" value="Td"/>
-    <input type="text" id="board1" placeholder="7s" value="Tc"/>
-    <input type="text" id="board2" placeholder="2c" value="2c"/>
+    <input type="text" id="board0" placeholder="Td" value="9c"/>
+    <input type="text" id="board1" placeholder="7s" value="Jc"/>
+    <input type="text" id="board2" placeholder="2c" value="Tc"/>
     <input type="text" id="board3" placeholder="2c"/>
     <input type="text" id="board4" placeholder="2c"/>
   </p>
@@ -76,17 +76,15 @@
     function getBoard() {
       let board = [];
       for (let i = 0; i < 5; i++) {
-        let card = new Card(document.getElementById("board"+i).value);
-        if (card) {
-          board.push(card);
+        let s = document.getElementById("board"+i).value;
+        if (s) {
+          board.push(new Card(s));
         }
       }
       return board;
     }
 
-    function getCombinations() {
-      let board = getBoard();
-      let hands = getSelectedHands();
+    function getSpecificHands(hands, board) {
       let possibleHands = [];
       for (let hand of hands) {
         for (let suit1 of 'cdhs') {
@@ -116,6 +114,13 @@
           }
         }
       }
+      return possibleHands;
+    }
+
+    function getCombinations() {
+      let board = getBoard();
+      let hands = getSelectedHands();
+      let possibleHands = getSpecificHands(hands, board);
       let divCombinations = document.getElementById("combinations");
       divCombinations.textContent =
         "There are " + possibleHands.length + " hands left.";
@@ -128,13 +133,23 @@
         }
         combinations[rank.category].push(hand);
       }
-      console.log(combinations);
       let ul = document.createElement('ul');
-      for (let category of ['quads', 'others']) {
+      const CATEGORIES = [
+        'Straight Flush',
+        'Quads',
+        'Full house',
+        'Flush',
+        'Straight',
+        'Three of a kind',
+        'Two pair',
+        'One pair',
+        'High card',
+      ];
+      for (let category of CATEGORIES) {
         if (category in combinations) {
           let li = document.createElement('li');
           li.textContent =
-            category + ': ' + combinations[category].toString();
+            category + ': ' + combinations[category].join(', ');
           ul.appendChild(li);
         }
       }
@@ -151,9 +166,9 @@
       }
     };
 
-    function Rank(category, kickers) {
+    function Rank(category, cardRanks) {
       this.category = category;
-      this.kickers = kickers;
+      this.cardRanks = cardRanks;
     }
 
     function getKickers(cards, count, exceptions) {
@@ -167,21 +182,87 @@
       return kickers.slice(0, count);
     }
 
+    function findStraight(ranks) {
+      let appeared = [];
+      for (let rank of ranks) {
+        appeared[rank] = true;
+        if (rank == 14) {
+          rank[1] = true;
+        }
+      }
+      for (let i = 14; i >= 5; i--) {
+        if (appeared[i] && appeared[i-1] && appeared[i-2] && appeared[i-3] &&
+            appeared[i-4]) {
+          return i;
+        }
+      }
+      return 0;
+    }
+
     function getHandRank(cards) {
       let rankCount = [];
       for (let i = 2; i <= 14; i++) {
         rankCount[i] = 0;
       }
+      let suits = { s: [], h: [], d: [], c: [] };
       for (let card of cards) {
         rankCount[card.rank]++;
+        suits[card.suit].push(card.rank);
+      }
+      for (let suit in suits) {
+        let x = findStraight(suits[suit]);
+        if (x) {
+          return new Rank('Straight Flush',
+                          [x, x-1, x-2, x-3, x == 5 ? 14 : x-4]);
+        }
       }
       for (let i = 14; i >= 2; i--) {
         if (rankCount[i] == 4) {
           let kickers = getKickers(cards, 1, [i]);
-          return new Rank('quads', [i].concat(kickers));
+          return new Rank('Quads', [i, i, i, i].concat(kickers));
         }
       }
-      return new Rank('others', []);
+      for (let i = 14; i >= 2; i--) {
+        if (rankCount[i] == 3) {
+          for (let j = 14; j >= 2; j--) {
+            if (j != i && rankCount[j] >= 2) {
+              return new Rank('Full house', [i, i, i, j, j]);
+            }
+          }
+        }
+      }
+      for (let suit in suits) {
+        if (suits[suit].length >= 5) {
+          return new Rank('Flush', getKickers(suits[suit], 5, []));
+        }
+      }
+      let ranks = [];
+      for (let card of cards) {
+        ranks.push(card.rank);
+      }
+      let x = findStraight(ranks);
+      if (x) {
+        return new Rank('Straight', [x, x-1, x-2, x-3, x==5 ? 14 : x-4]);
+      }
+      for (let i = 14; i >= 2; i--) {
+        if (rankCount[i] == 3) {
+          let kickers = getKickers(cards, 2, [i]);
+          return new Rank('Three of a kind', [i, i, i].concat(kickers));
+        }
+      }
+      for (let i = 14; i >= 2; i--) {
+        if (rankCount[i] == 2) {
+          for (let j = i-1; j >= 2; j--) {
+            if (rankCount[j] == 2) {
+              let kickers = getKickers(cards, 1, [i, j]);
+              return new Rank('Two pair', [i, i, j, j].concat(kickers));
+            }
+          }
+          let kickers = getKickers(cards, 3, [i]);
+          return new Rank('One pair', [i, i].concat(kickers));
+        }
+      }
+      return new Rank('High card', getKickers(cards, 5, []));
     }
 
     function reset() {
