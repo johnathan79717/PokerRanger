@@ -116,6 +116,26 @@
       }
       return possibleHands;
     }
+    const STRAIGHT_FLUSH = 0;
+    const FOUR_OF_A_KIND = 1;
+    const FULL_HOUSE = 2;
+    const FLUSH = 3;
+    const STRAIGHT = 4;
+    const THREE_OF_A_KIND = 5;
+    const TWO_PAIR = 6;
+    const ONE_PAIR = 7;
+    const HIGH_CARD = 8;
+    const CATEGORIES = [
+      'Straight Flush',
+      'Quads',
+      'Full house',
+      'Flush',
+      'Straight',
+      'Three of a kind',
+      'Two pair',
+      'One pair',
+      'High card',
+    ];
 
     function showCombinations() {
       let board = getBoard();
@@ -131,7 +151,7 @@
         if (!(rank.category in combinations)) {
           combinations[rank.category] = [];
         }
-        if (rank.category == "One pair") {
+        if (rank.category == ONE_PAIR) {
           let arr = combinations[rank.category];
           let pairRank = rank.cardRanks[0];
           if (!arr[pairRank]) {
@@ -143,17 +163,6 @@
         }
       }
       let ul = document.createElement('ul');
-      const CATEGORIES = [
-        'Straight Flush',
-        'Quads',
-        'Full house',
-        'Flush',
-        'Straight',
-        'Three of a kind',
-        'Two pair',
-        'One pair',
-        'High card',
-      ];
       function displayCombination(category, hands) {
         let percentage =
           Math.round(hands.length / possibleHands.length * 1000) / 10;
@@ -161,16 +170,16 @@
         li.textContent = `${category} (${percentage}%): ${hands.join(', ')}`;
         ul.appendChild(li);
       }
-      for (let category of CATEGORIES) {
+      for (let category in CATEGORIES) {
         if (category in combinations) {
-          if (category == "One pair") {
+          if (category == ONE_PAIR) {
             let arr = combinations[category];
             for (let i = 14; i >= 2; i--) {
               if (!arr[i]) continue;
               displayCombination("Pair of " + numToRank(i) + "s", arr[i]);
             }
           } else {
-            displayCombination(category, combinations[category]);
+            displayCombination(CATEGORIES[category], combinations[category]);
           }
         }
       }
@@ -233,28 +242,28 @@
       for (let suit in suits) {
         let x = findStraight(suits[suit]);
         if (x) {
-          return new Rank('Straight Flush',
+          return new Rank(STRAIGHT_FLUSH,
                           [x, x-1, x-2, x-3, x == 5 ? 14 : x-4]);
         }
       }
       for (let i = 14; i >= 2; i--) {
         if (rankCount[i] == 4) {
           let kickers = getKickers(cards, 1, [i]);
-          return new Rank('Quads', [i, i, i, i].concat(kickers));
+          return new Rank(FOUR_OF_A_KIND, [i, i, i, i].concat(kickers));
         }
       }
       for (let i = 14; i >= 2; i--) {
         if (rankCount[i] == 3) {
           for (let j = 14; j >= 2; j--) {
             if (j != i && rankCount[j] >= 2) {
-              return new Rank('Full house', [i, i, i, j, j]);
+              return new Rank(FULL_HOUSE, [i, i, i, j, j]);
             }
           }
         }
       }
       for (let suit in suits) {
         if (suits[suit].length >= 5) {
-          return new Rank('Flush', getKickers(suits[suit], 5, []));
+          return new Rank(FLUSH, getKickers(suits[suit], 5, []));
         }
       }
       let ranks = [];
@@ -263,12 +272,12 @@
       }
       let x = findStraight(ranks);
       if (x) {
-        return new Rank('Straight', [x, x-1, x-2, x-3, x==5 ? 14 : x-4]);
+        return new Rank(STRAIGHT, [x, x-1, x-2, x-3, x==5 ? 14 : x-4]);
       }
       for (let i = 14; i >= 2; i--) {
         if (rankCount[i] == 3) {
           let kickers = getKickers(cards, 2, [i]);
-          return new Rank('Three of a kind', [i, i, i].concat(kickers));
+          return new Rank(THREE_OF_A_KIND, [i, i, i].concat(kickers));
         }
       }
       for (let i = 14; i >= 2; i--) {
@@ -276,14 +285,14 @@
           for (let j = i-1; j >= 2; j--) {
             if (rankCount[j] == 2) {
               let kickers = getKickers(cards, 1, [i, j]);
-              return new Rank('Two pair', [i, i, j, j].concat(kickers));
+              return new Rank(TWO_PAIR, [i, i, j, j].concat(kickers));
             }
           }
           let kickers = getKickers(cards, 3, [i]);
-          return new Rank('One pair', [i, i].concat(kickers));
+          return new Rank(ONE_PAIR, [i, i].concat(kickers));
         }
       }
-      return new Rank('High card', getKickers(cards, 5, []));
+      return new Rank(HIGH_CARD, getKickers(cards, 5, []));
     }
 
     function reset() {
