@@ -158,12 +158,28 @@
             arr[pairRank] = [];
           }
           arr[pairRank].push(hand);
+        } else if (rank.category == HIGH_CARD) {
+          let topCard = 0;
+          for (let card of board) {
+            topCard = Math.max(topCard, card.rank);
+          }
+          let numOverCards = 0;
+          for (let card of hand.cards) {
+            if (card.rank > topCard) {
+              numOverCards++;
+            }
+          }
+          let arr = combinations[rank.category];
+          if (!arr[numOverCards]) {
+            arr[numOverCards] = [];
+          }
+          arr[numOverCards].push(hand);
         } else {
           combinations[rank.category].push(hand);
         }
       }
       let ul = document.createElement('ul');
-      function displayCombination(category, hands) {
+      function addCombination(category, hands) {
         let percentage =
           Math.round(hands.length / possibleHands.length * 1000) / 10;
         let li = document.createElement('li');
@@ -175,11 +191,19 @@
           if (category == ONE_PAIR) {
             let arr = combinations[category];
             for (let i = 14; i >= 2; i--) {
-              if (!arr[i]) continue;
-              displayCombination("Pair of " + numToRank(i) + "s", arr[i]);
+              if (arr[i]) {
+                addCombination("Pair of " + numToRank(i) + "s", arr[i]);
+              }
+            }
+          } else if (category == HIGH_CARD) {
+            let arr = combinations[category];
+            for (let i of [2, 1, 0]) {
+              if (arr[i]) {
+                addCombination(i + " over card(s)", arr[i]);
+              }
             }
           } else {
-            displayCombination(CATEGORIES[category], combinations[category]);
+            addCombination(CATEGORIES[category], combinations[category]);
           }
         }
       }
